@@ -8,6 +8,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @SpringBootApplication
 public class SpringBootReactorApplication implements CommandLineRunner {
 
@@ -21,19 +24,29 @@ public class SpringBootReactorApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("### Starting Spring ###");
 
+        List<String> userList = new ArrayList<String>();
+        userList.add("John Rambo");
+        userList.add("Mary Popins");
+        userList.add("Paul Montana");
+        userList.add("Sofia Vergara");
+
         // Flux is the publisher.
-        Flux<User> names = Flux.just("John", "Mary", "Paul", "Sofia")
+        // Flux<String> names = Flux.just("John Rambo", "Mary Popings", "Paul Montana", "Sofia Vergara");
+        Flux<String> names = Flux.fromIterable(userList);
                 // Transforms the names and returns a new instance without modifying the original
                 // "Flux<String> names" is immutable
                 // Map always returns a value
-                .map(name -> new User(name.toUpperCase(),null))
+        Flux<User>users = names.map(name -> new User(name.split(" ")[0].toUpperCase(), name.split(" ")[1]))
+                .filter(name-> {
+                    return name.getName().toLowerCase().equals("sofia");
+                })
                 // Iterates for each name.
                 .doOnNext(user -> {
                     if(user == null){
                         throw new RuntimeException("The value cannot be empty");
                     }{
                         // And shows the corresponding value
-                        System.out.println("onNext method --> " + user.getName());
+                        System.out.println("onNext method --> " + user.getName().concat(" ").concat(user.getSurname()));
 
                     }{
                         // Other methods
@@ -46,7 +59,7 @@ public class SpringBootReactorApplication implements CommandLineRunner {
                 });
 
         // Creates a subscription and it shows the names. This is an observer and is executed at the same time of the doOnNext.
-        names.subscribe(element -> log.info("subscribe method --> " + element.getName()),
+        users.subscribe(element -> log.info("subscribe method --> " + element),
                 error -> log.error(error.getMessage()),
                 // You can replace by a lambda expression
                 new Runnable() {
