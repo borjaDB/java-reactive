@@ -24,7 +24,33 @@ public class SpringBootReactorApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("### Starting Spring ###");
-        this.convertToString();
+        this.mergeTwoFlux();
+
+    }
+
+    public User createUser() {
+        return new User("Jonh","Doe");
+    }
+
+    public void mergeTwoFlux() {
+        Mono<User> userMono = Mono.fromCallable(()-> createUser());
+    }
+
+    public void convertFluxToMono() {
+        // The goal of this method is to create a Mono list from Flux.
+        List<User> userList = new ArrayList<>();
+        userList.add(new User("John", "Rambo"));
+        userList.add(new User("Mary", "Popins"));
+        userList.add(new User("Paul", "Montana"));
+        userList.add(new User("Paul", "Gasol"));
+        userList.add(new User("Sofia", "Vergara"));
+
+        Flux.fromIterable(userList)
+                // collectList transforms the iterable Flux to Mono list
+                .collectList()
+                .subscribe(list -> {
+                    list.forEach(item ->log.info("User: " + item.toString()));
+                });
 
     }
 
