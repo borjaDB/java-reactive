@@ -6,15 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class Post {
+public class Comment {
 
     private List<String> commentList;
 
-    public Post() {
+    public Comment() {
         this.commentList = new ArrayList<>();
     }
 
     public void addComment(String comment) {
         this.commentList.add(comment);
     }
+
+
 }

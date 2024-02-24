@@ -1,19 +1,16 @@
 package com.reactive.springbootreactor.models;
+
+import lombok.Data;
+
+@Data
 public class UserComments {
 
     private User user;
-    private Post post;
+    private Comment post;
 
-    public UserComments(User user, Post post) {
+    public UserComments(User user, Comment post) {
         this.user = user;
         this.post = post;
     }
 
-    @Override
-    public String toString() {
-        return "UserComments{" +
-                "user=" + user +
-                ", post=" + post +
-                '}';
-    }
 }

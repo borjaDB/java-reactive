@@ -1,6 +1,8 @@
 package com.reactive.springbootreactor;
 
+import com.reactive.springbootreactor.models.Comment;
 import com.reactive.springbootreactor.models.User;
+import com.reactive.springbootreactor.models.UserComments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -9,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,16 +27,85 @@ public class SpringBootReactorApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("### Starting Spring ###");
-        this.mergeTwoFlux();
+        this.delayElement();
 
     }
 
-    public User createUser() {
-        return new User("Jonh","Doe");
+    public void delayElement() {
+        // This sample creates a Flux and applies a delay
+        Flux.range(1, 12)
+                .delayElements(Duration.ofSeconds(1))
+                .doOnNext(i -> log.info(i.toString()))
+                .blockLast();
     }
 
-    public void mergeTwoFlux() {
-        Mono<User> userMono = Mono.fromCallable(()-> createUser());
+    public void intervalSample() {
+        // This sample creates two flux and merge both creating sequence
+        Flux<Integer> range = Flux.range(1, 12);
+        Flux<Long> delay = Flux.interval(Duration.ofSeconds(1));
+
+        range.zipWith(delay, (rangeElement, delayElement) -> rangeElement)
+                .doOnNext(i -> log.info(i.toString()))
+                .blockLast(); // block shows the sequence in the console
+    }
+
+    public void zipWithRangesSample() {
+        // This sample has two flux and create a new one with the merge of both
+        Flux.just(1, 2, 3, 4)
+                .map(i -> (i * 2))
+                .zipWith(Flux.range(0, 4), (firstFlux, secondFlux) -> String.format("First flux: %d, Second flux: %d", firstFlux, secondFlux))
+                .subscribe(e -> log.info(e));
+    }
+
+    public void mergeTwoFluxZipWith() {
+        // It converts two mono objects in a new flux merging both
+        // fromCallable creates a new user calling createUser
+        Mono<User> userMono = Mono.fromCallable(() -> {
+            return new User("John", "Doe");
+        });
+        Mono<Comment> commentMono = Mono.fromCallable(() -> {
+
+            Comment comment = new Comment();
+            comment.addComment("This is an example comment");
+            comment.addComment("It shows the merge of two fluxes");
+            comment.addComment("Using fromCallable to create a user and the comment");
+            return comment;
+        });
+
+        // Now we crate the withZip to merge both and covert to userComment
+        Mono<UserComments> userCommentsMono = userMono.zipWith(commentMono, UserComments::new);
+        userCommentsMono.subscribe(e -> log.info(e.toString()));
+
+        // The same as above but using tuples
+        Mono<UserComments> userCommentsMonoTuple = userMono.zipWith(commentMono)
+                .map(tupleElement -> {
+                    User u = tupleElement.getT1();
+                    Comment c = tupleElement.getT2();
+                    return new UserComments(u, c);
+                });
+        userCommentsMonoTuple.subscribe(e -> log.info("Tuple --> " + e.toString()));
+
+    }
+
+    public void mergeTwoFluxFlatMap() {
+        // It converts two mono objects in a new flux merging both
+        // fromCallable creates a new user calling createUser
+        Mono<User> userMono = Mono.fromCallable(() -> {
+            return new User("John", "Doe");
+        });
+        Mono<Comment> commentMono = Mono.fromCallable(() -> {
+
+            Comment comment = new Comment();
+            comment.addComment("This is an example comment");
+            comment.addComment("It shows the merge of two fluxes");
+            comment.addComment("Using fromCallable to create a user and the comment");
+            return comment;
+        });
+
+        // Now we crate the flatmap to merge both and covert to userComment
+        userMono.flatMap(userElement -> commentMono.map(commentElement -> new UserComments(userElement, commentElement)))
+                .subscribe(userComments -> log.info(userComments.toString()));
+
     }
 
     public void convertFluxToMono() {
@@ -49,7 +121,7 @@ public class SpringBootReactorApplication implements CommandLineRunner {
                 // collectList transforms the iterable Flux to Mono list
                 .collectList()
                 .subscribe(list -> {
-                    list.forEach(item ->log.info("User: " + item.toString()));
+                    list.forEach(item -> log.info("User: " + item.toString()));
                 });
 
     }
